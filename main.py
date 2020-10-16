@@ -54,7 +54,9 @@ def authenticate():
         if (f.status == 200):
             res_body = f.read()
             res_json = json.loads(res_body.decode("utf-8"))
-            return res_json['token']
+        f.close()
+
+    return res_json['token']
 
 def list_vaults(api_token):
     req = urllib.request.Request(url=os.environ["NULLAFI_API_URL"] + "/v2/vault", 
@@ -66,8 +68,43 @@ def list_vaults(api_token):
         if (f.status == 200):
             res_body = f.read()
             res_json = json.loads(res_body.decode("utf-8"))
-            return res_json
+        f.close()
+    
+    return res_json
 
+def load_json_example():
+    f = open('user.json',)
+    data = json.loads(f.read())
+    f.close()
+    return data
+
+def get_address_alias(api_token, original_data):
+    req_data = {
+        "data" : original_data,
+        "vaultName": "Default",
+        "type": 7, #address
+        "tags": [
+            "address from json"
+        ]
+    }
+
+    req = urllib.request.Request(url=os.environ["NULLAFI_API_URL"] + "/v2/alias", 
+        data=bytes(json.dumps(req_data), 
+        encoding="utf-8"), 
+        method='POST', 
+        headers={
+            'content-type': 'application/json',
+            'Authorization': api_token
+        }
+    )
+
+    with urllib.request.urlopen(req, timeout=5) as f:
+        if (f.status == 200):
+            res_body = f.read()
+            res_json = json.loads(res_body.decode("utf-8"))
+        f.close()
+
+    return res_json
     
 if __name__ == "__main__":
     """
@@ -88,3 +125,10 @@ if __name__ == "__main__":
     """
     vault_list = list_vaults(api_token)
     print(f"List of vaults is: {vault_list}")
+
+    """
+    Creating a new address alias
+    """
+    json_data = load_json_example()
+    new_address_alias = get_address_alias(api_token, json.dumps(json_data["address"]))
+    print(new_address_alias)
